@@ -1,0 +1,71 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`should ignore a React component 1`] = `"<MyComponent />;"`;
+
+exports[`should transform Reactylon components and ingore React component 1`] = `
+"import { DirectionalLight as _DirectionalLight } from "@babylonjs/core/Lights/directionalLight";
+import { PointLight as _PointLight } from "@babylonjs/core/Lights/pointLight";
+import { CreateBox as _CreateBox } from "@babylonjs/core/Meshes/Builders/boxBuilder";
+import { Texture as _Texture } from "@babylonjs/core/Materials/Textures/texture";
+import { StandardMaterial as _StandardMaterial } from "@babylonjs/core/Materials/standardMaterial";
+import { register as _register } from "reactylon";
+_register({
+  "standardMaterial": [_StandardMaterial, 0],
+  "texture": [_Texture, 0],
+  "box": [_CreateBox, 0],
+  "pointLight": [_PointLight, 0],
+  "directionalLight": [_DirectionalLight, 0]
+});
+<> <standardMaterial name='material'> <texture url='texture-url' /> </standardMaterial> <box name='box' /> <pointLight name='point' position={new Vector3(0, 1, 0)} diffuse={Color3.Red()} specular={Color3.Green()} /> <MyComponent name='name' key='key' age={0} /> <directionalLight name='directional' direction={new Vector3(0, -1, 0)} diffuse={Color3.Red()} specular={Color3.Green()} /> </>;"
+`;
+
+exports[`should transform a Reactylon component 1`] = `
+"import { HemisphericLight as _HemisphericLight } from "@babylonjs/core/Lights/hemisphericLight";
+import { register as _register } from "reactylon";
+_register({
+  "hemisphericLight": [_HemisphericLight, 0]
+});
+<hemisphericLight name='hemispherical' diffuse={Color3.Red()} direction={new Vector3(0, 1, 0)} specular={Color3.Green()} groundColor={Color3.Blue()} />;"
+`;
+
+exports[`should transform a Reactylon component stored in a variable 1`] = `
+"import { Mesh as _Mesh } from "@babylonjs/core/Meshes/mesh";
+import { register as _register } from "reactylon";
+_register({
+  "mesh": [_Mesh, 0]
+});
+const Comp = 'mesh';
+<Comp />;"
+`;
+
+exports[`should transform both Reactylon components 1`] = `
+"import { DirectionalLight as _DirectionalLight } from "@babylonjs/core/Lights/directionalLight";
+import { PointLight as _PointLight } from "@babylonjs/core/Lights/pointLight";
+import { register as _register } from "reactylon";
+_register({
+  "pointLight": [_PointLight, 0],
+  "directionalLight": [_DirectionalLight, 0]
+});
+isCondition ? <pointLight /> : <directionalLight />;"
+`;
+
+exports[`should transform multiple Reactylon components 1`] = `
+"import { DirectionalLight as _DirectionalLight } from "@babylonjs/core/Lights/directionalLight";
+import { PointLight as _PointLight } from "@babylonjs/core/Lights/pointLight";
+import { CreateText as _CreateText } from "@babylonjs/core/Meshes/Builders/textBuilder";
+import { CreateSphere as _CreateSphere } from "@babylonjs/core/Meshes/Builders/sphereBuilder";
+import { CreateBox as _CreateBox } from "@babylonjs/core/Meshes/Builders/boxBuilder";
+import { Texture as _Texture } from "@babylonjs/core/Materials/Textures/texture";
+import { StandardMaterial as _StandardMaterial } from "@babylonjs/core/Materials/standardMaterial";
+import { register as _register } from "reactylon";
+_register({
+  "standardMaterial": [_StandardMaterial, 0],
+  "texture": [_Texture, 0],
+  "box": [_CreateBox, 0],
+  "sphere": [_CreateSphere, 0],
+  "text3D": [_CreateText, 0],
+  "pointLight": [_PointLight, 0],
+  "directionalLight": [_DirectionalLight, 0]
+});
+<> <standardMaterial name='material'> <texture url='texture-url' /> </standardMaterial> <box /> <sphere /> <text3D /> <standardMaterial name='material-1' /> <standardMaterial name='material-2' /> <pointLight name='point' position={new Vector3(0, 1, 0)} diffuse={Color3.Red()} specular={Color3.Green()} /> <directionalLight name='directional' direction={new Vector3(0, -1, 0)} diffuse={Color3.Red()} specular={Color3.Green()} /> </>;"
+`;
