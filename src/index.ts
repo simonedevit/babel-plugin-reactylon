@@ -111,9 +111,28 @@ export default declare((api) => {
                 }
 
                 // Add implicit side effects (derived from static parse of JSX Reactylon code)
-                const isPhysicsEngine = attributes.some(attr => t.isJSXAttribute(attr) && attr.name.name === "physicsOptions");
+                const isMultipleCanvas = type === 'Engine' && attributes.some(attr => t.isJSXAttribute(attr) && attr.name.name === "isMultipleCanvas");
+                if (isMultipleCanvas) {
+                    sideEffects.push(t.importDeclaration([], t.stringLiteral('@babylonjs/core/Engines/AbstractEngine/abstractEngine.views.js')));
+                }
+                const isPhysicsEngine = type === 'Scene' && attributes.some(attr => t.isJSXAttribute(attr) && attr.name.name === "physicsOptions");
                 if (isPhysicsEngine) {
                     sideEffects.push(t.importDeclaration([], t.stringLiteral('@babylonjs/core/Physics/physicsEngineComponent.js')));
+                }
+                const isAudio = type === 'sound';
+                if (isAudio) {
+                    // Audio v1
+                    sideEffects.push(t.importDeclaration([], t.stringLiteral('@babylonjs/core/Audio/audioSceneComponent.js')));
+                    // sideEffects.push(t.importDeclaration([], t.stringLiteral('@babylonjs/core/Audio/audioEngine.js')));
+                }
+
+                const isCheckCollisions = attributes.some(attr => t.isJSXAttribute(attr) && attr.name.name === "checkCollisions");
+                if (isCheckCollisions) {
+                    sideEffects.push(t.importDeclaration([], t.stringLiteral('@babylonjs/core/Collisions/collisionCoordinator.js')));
+                }
+                const isHighlightLayer = type === 'highlightLayer';
+                if (isHighlightLayer) {
+                    sideEffects.push(t.importDeclaration([], t.stringLiteral('@babylonjs/core/Layers/effectLayerSceneComponent.js')));
                 }
                 const isBoundingBox = attributes.some(attr => t.isJSXAttribute(attr) && attr.name.name === "showBoundingBox");
                 if (isBoundingBox) {
@@ -168,7 +187,7 @@ export default declare((api) => {
 
                     const babylonImportDeclarations = babylonImports.map(([, importDeclaration]) => importDeclaration);
 
-                    // Add implicit prototype-level side effects (derived from static parse of JavaScript Babylon.js code)
+                    // Add implicit prototype-level side effects (derived from static parse of JavaScript code, e.g. scene.createDefaultCameraOrLight)
                     path.traverse({
                         CallExpression(callPath) {
                             const callee = callPath.node.callee;

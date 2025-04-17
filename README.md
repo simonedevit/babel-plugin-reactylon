@@ -1,6 +1,6 @@
 # Babel Plugin Reactylon
 
-A Babel plugin designed to enable tree shaking in a Reactylon application. It statically analyzes Reactylon JSX elements and automatically manages imports and registrations of the relative Babylon.js classes, ensuring only the necessary parts of the Babylon.js library are included in the final bundle.
+A Babel plugin designed to enable **tree shaking** in a Reactylon application. It statically analyzes Reactylon JSX elements and automatically manages imports and registrations of the relative Babylon.js classes, ensuring only the necessary parts of the Babylon.js library are included in the final bundle.
 
 ## Features
 - Automatic detection of Babylon.js components used in JSX
@@ -11,7 +11,13 @@ A Babel plugin designed to enable tree shaking in a Reactylon application. It st
 
 ## Configuration
 
-### Babel
+To get started, install the plugin using the following command:
+
+```bash
+npm install babel-plugin-reactylon --save-dev
+```
+
+### Babel (standalone, Next.js or React Native)
 
 Add the plugin to your Babel configuration:
 
@@ -62,6 +68,20 @@ module: {
 };
 ```
 
+### Vite
+```js
+// vite.config.js
+export default defineConfig({
+  plugins: [
+    react({
+      babel: {
+        plugins: ['babel-plugin-reactylon']
+      }
+    }),
+  ],
+})
+```
+
 ### Additional configurations
 Additionally you can manually define extra side effects (see [Babylon.js ES6 support FAQ](https://doc.babylonjs.com/setup/frameworkPackages/es6Support/#faq)) or specify a custom `node_modules` path (useful if you are working with a monorepo setup).
 
@@ -77,7 +97,7 @@ Additionally you can manually define extra side effects (see [Babylon.js ES6 sup
 ```
 
 ## How it works
-The plugin analyzes your JSX code by scanning for Reactylon components. When a component is detected, it automatically imports the corresponding Babylon.js class and registers it with Reactylon, making it available in the rendering context. To remain consistent with Babylon.js' modular architecture, the plugin selects the *deepest available class* implementation by recursively scanning the directory tree. This approach ensures that the most specific and optimized module is used, preventing unwanted side effects that could compromise tree shaking.
+The plugin analyzes your JSX code by scanning for Reactylon components. When a component is detected, it automatically imports the corresponding Babylon.js class and registers it with Reactylon, making it available in the rendering context. To remain consistent with Babylon.js modular architecture, the plugin selects the *deepest available class* implementation by recursively scanning the directory tree. This approach ensures that the most specific and optimized module is used, preventing unwanted side effects that could compromise tree shaking.
 
 ### Example
 
