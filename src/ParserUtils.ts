@@ -87,7 +87,7 @@ class ParserUtils {
             if (fs.statSync(fullPath).isDirectory()) {
                 this.scanDirectory(fullPath, exportsMap, sideEffectsMap);
             } else if (file.endsWith('.js') || file.endsWith('.mjs') || file.endsWith('.ts')) {
-                const importPath = (fullPath.replace(/\.(js|mjs|ts)$/, '')).replace(/^node_modules\//, '');
+                const importPath = (fullPath.replace(/\.(js|mjs|ts)$/, '')).replace(/\\/g, '/').replace(/^.*?node_modules\//, '');
                 const { exports, sideEffects } = this.getExportsAndSideEffects(fullPath);
                 exports.forEach(exp => {
                     exportsMap[exp] = importPath;
