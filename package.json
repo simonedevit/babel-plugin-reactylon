@@ -1,6 +1,6 @@
 {
   "name": "babel-plugin-reactylon",
-  "version": "1.0.7",
+  "version": "1.0.8",
   "description": "Babel plugin to enable tree-shaking of Babylon.js classes within a Reactylon application.",
   "main": "build/index.js",
   "type": "module",
