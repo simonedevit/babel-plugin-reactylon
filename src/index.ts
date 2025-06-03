@@ -195,8 +195,10 @@ export default declare((api) => {
                             if (t.isMemberExpression(callee)) {
                                 const property = callee.property;
                                 if (t.isIdentifier(property)) {
-                                    if (property.name in coreSideEffectsMap) {
-                                        sideEffects.push(t.importDeclaration([], t.stringLiteral(coreSideEffectsMap[property.name])));
+                                    const sideEffectPath = coreSideEffectsMap[property.name];
+                                    // exclude assets folder where there are .wasm and relative .js files
+                                    if (sideEffectPath && !sideEffectPath.startsWith('@babylonjs/core/assets/')) {
+                                        sideEffects.push(t.importDeclaration([], t.stringLiteral(sideEffectPath)));
                                         // callPath.stop();
                                     }
                                 }
