@@ -33,13 +33,12 @@ export default declare((api) => {
         pre() {
             if (!initialized) {
                 const options = this.opts as PluginOptions;
-                const nodeModulesPath = options.nodeModulesPath || 'node_modules';
 
-                const coreExportsAndSideEffects = ParserUtils.generateExportsAndSideEffects('@babylonjs/core', nodeModulesPath);
+                const coreExportsAndSideEffects = ParserUtils.generateExportsAndSideEffects('@babylonjs/core');
                 coreExportsMap = coreExportsAndSideEffects.exports;
                 coreSideEffectsMap = coreExportsAndSideEffects.sideEffects;
 
-                const guiExportsAndSideEffects = ParserUtils.generateExportsAndSideEffects('@babylonjs/gui', nodeModulesPath);
+                const guiExportsAndSideEffects = ParserUtils.generateExportsAndSideEffects('@babylonjs/gui');
                 guiExportsMap = guiExportsAndSideEffects.exports;
                 //guiSideEffectsMap = guiExportsAndSideEffects.sideEffects;
 
@@ -196,7 +195,7 @@ export default declare((api) => {
                                 const property = callee.property;
                                 if (t.isIdentifier(property)) {
                                     const sideEffectPath = coreSideEffectsMap[property.name];
-                                    // exclude assets folder where there are .wasm and relative .js files
+                                    // exclude assets folder containing .wasm and relative .js files
                                     if (sideEffectPath && !sideEffectPath.startsWith('@babylonjs/core/assets/')) {
                                         sideEffects.push(t.importDeclaration([], t.stringLiteral(sideEffectPath)));
                                         // callPath.stop();

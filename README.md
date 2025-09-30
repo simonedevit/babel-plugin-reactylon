@@ -83,7 +83,7 @@ export default defineConfig({
 ```
 
 ### Additional configurations
-Additionally you can manually define extra side effects (see [Babylon.js ES6 support FAQ](https://doc.babylonjs.com/setup/frameworkPackages/es6Support/#faq)) or specify a custom `node_modules` path (useful if you are working with a monorepo setup).
+Additionally you can manually define extra side effects (see [Babylon.js ES6 support FAQ](https://doc.babylonjs.com/setup/frameworkPackages/es6Support/#faq)).
 
 ```js
 ['babel-plugin-reactylon', {
@@ -91,8 +91,6 @@ Additionally you can manually define extra side effects (see [Babylon.js ES6 sup
   sideEffects: [
     '@babylonjs/core/Engines/Extensions/engine.query.js'
   ]
-  // node modules path (optional)
-  nodeModulesPath: '../../node_modules'
 }]
 ```
 

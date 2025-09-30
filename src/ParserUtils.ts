@@ -1,5 +1,6 @@
 import path from 'path';
 import fs from 'fs';
+import { createRequire } from 'module';
 
 type ExportsAndSideEffects = {
     exports: Array<string>;
@@ -79,15 +80,24 @@ class ParserUtils {
     * @param dir - directory to scan
     * @param exportsMap - exports map to populate 
     * @param sideEffectsMap - side effects map to populate
+    * @param pkgRoot - package root (real path or symlinked path if the consumer is using npm/yarn link)
+    * @param pkgName - package name (es. "@babylonjs/core")
     */
-    static scanDirectory(dir: string, exportsMap: Record<string, string>, sideEffectsMap: Record<string, string>): void {
+    static scanDirectory(
+        dir: string,
+        exportsMap: Record<string, string>,
+        sideEffectsMap: Record<string, string>,
+        pkgRoot: string,
+        pkgName: string 
+    ): void {
         const files = fs.readdirSync(dir);
         files.forEach(file => {
             const fullPath = path.join(dir, file);
             if (fs.statSync(fullPath).isDirectory()) {
-                this.scanDirectory(fullPath, exportsMap, sideEffectsMap);
+                this.scanDirectory(fullPath, exportsMap, sideEffectsMap, pkgRoot, pkgName);
             } else if (file.endsWith('.js') || file.endsWith('.mjs') || file.endsWith('.ts')) {
-                const importPath = (fullPath.replace(/\.(js|mjs|ts)$/, '')).replace(/\\/g, '/').replace(/^.*?node_modules\//, '');
+                const rel = path.relative(pkgRoot, fullPath).replace(/\.(js|mjs|ts)$/, '');
+                const importPath = path.posix.join(pkgName, rel.split(path.sep).join('/'));
                 const { exports, sideEffects } = this.getExportsAndSideEffects(fullPath);
                 exports.forEach(exp => {
                     exportsMap[exp] = importPath;
@@ -104,15 +114,19 @@ class ParserUtils {
     * @param moduleName - module name to analyze
     * @returns an object containing the discovered exports and side effects maps
     */
-
-    static generateExportsAndSideEffects(moduleName: string, nodeModulesPath: string): ExportsAndSideEffectsMap {
-        const modulePath = path.join(nodeModulesPath, moduleName);
-        if (!fs.existsSync(modulePath)) {
-            console.error(`The module "${moduleName}" doesn't exist.`);
+    static generateExportsAndSideEffects(moduleName: string): ExportsAndSideEffectsMap {
+        const requireFromHere = createRequire(import.meta.url);
+        let pkgJsonPath: string;
+        try {
+            pkgJsonPath = requireFromHere.resolve(`${moduleName}/package.json`);
+        } catch {
+            console.error(`The module "${moduleName}" doesn't exist or cannot be resolved.`);
+            return { exports: {}, sideEffects: {} };
         }
+        const modulePath = fs.realpathSync(path.dirname(pkgJsonPath));
         const exportsMap: Record<string, string> = {};
         const sideEffectsMap: Record<string, string> = {};
-        this.scanDirectory(modulePath, exportsMap, sideEffectsMap);
+        this.scanDirectory(modulePath, exportsMap, sideEffectsMap, modulePath, moduleName);
         return {
             exports: exportsMap,
             sideEffects: sideEffectsMap

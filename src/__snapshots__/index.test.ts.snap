@@ -53,6 +53,7 @@ exports[`should transform multiple Reactylon components 1`] = `
 "import { DirectionalLight as _DirectionalLight } from "@babylonjs/core/Lights/directionalLight";
 import { PointLight as _PointLight } from "@babylonjs/core/Lights/pointLight";
 import { CreateText as _CreateText } from "@babylonjs/core/Meshes/Builders/textBuilder";
+import { CreatePlane as _CreatePlane } from "@babylonjs/core/Meshes/Builders/planeBuilder";
 import { CreateSphere as _CreateSphere } from "@babylonjs/core/Meshes/Builders/sphereBuilder";
 import { CreateBox as _CreateBox } from "@babylonjs/core/Meshes/Builders/boxBuilder";
 import { Texture as _Texture } from "@babylonjs/core/Materials/Textures/texture";
@@ -63,9 +64,10 @@ _register({
   "texture": [_Texture, 0],
   "box": [_CreateBox, 0],
   "sphere": [_CreateSphere, 0],
+  "plane": [_CreatePlane, 0],
   "text3D": [_CreateText, 0],
   "pointLight": [_PointLight, 0],
   "directionalLight": [_DirectionalLight, 0]
 });
-<> <standardMaterial name='material'> <texture url='texture-url' /> </standardMaterial> <box /> <sphere /> <text3D /> <standardMaterial name='material-1' /> <standardMaterial name='material-2' /> <pointLight name='point' position={new Vector3(0, 1, 0)} diffuse={Color3.Red()} specular={Color3.Green()} /> <directionalLight name='directional' direction={new Vector3(0, -1, 0)} diffuse={Color3.Red()} specular={Color3.Green()} /> </>;"
+<> <standardMaterial name='material'> <texture url='texture-url' /> </standardMaterial> <box /> <sphere /> <plane /> <text3D /> <standardMaterial name='material-1' /> <standardMaterial name='material-2' /> <pointLight name='point' position={new Vector3(0, 1, 0)} diffuse={Color3.Red()} specular={Color3.Green()} /> <directionalLight name='directional' direction={new Vector3(0, -1, 0)} diffuse={Color3.Red()} specular={Color3.Green()} /> </>;"
 `;

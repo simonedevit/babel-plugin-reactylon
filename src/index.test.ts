@@ -44,6 +44,7 @@ test('should transform multiple Reactylon components', () => {
             </standardMaterial>
             <box />
             <sphere />
+            <plane />
             <text3D />
             <standardMaterial name='material-1' />
             <standardMaterial name='material-2' />
