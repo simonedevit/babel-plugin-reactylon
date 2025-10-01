@@ -88,7 +88,7 @@ class ParserUtils {
         exportsMap: Record<string, string>,
         sideEffectsMap: Record<string, string>,
         pkgRoot: string,
-        pkgName: string 
+        pkgName: string
     ): void {
         const files = fs.readdirSync(dir);
         files.forEach(file => {
@@ -115,12 +115,14 @@ class ParserUtils {
     * @returns an object containing the discovered exports and side effects maps
     */
     static generateExportsAndSideEffects(moduleName: string): ExportsAndSideEffectsMap {
-        const requireFromHere = createRequire(import.meta.url);
+
+        const resolveFrom = process.cwd();
+        const requireFromCaller = createRequire(path.join(resolveFrom, 'package.json'));
         let pkgJsonPath: string;
         try {
-            pkgJsonPath = requireFromHere.resolve(`${moduleName}/package.json`);
+            pkgJsonPath = requireFromCaller.resolve(`${moduleName}/package.json`);
         } catch {
-            console.error(`The module "${moduleName}" doesn't exist or cannot be resolved.`);
+            console.error(`The module "${moduleName}" doesn't exist or cannot be resolved from ${resolveFrom}.`);
             return { exports: {}, sideEffects: {} };
         }
         const modulePath = fs.realpathSync(path.dirname(pkgJsonPath));
