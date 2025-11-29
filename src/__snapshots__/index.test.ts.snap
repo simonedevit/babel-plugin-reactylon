@@ -1,8 +1,97 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
+exports[`should add JSX-element side effect 1`] = `
+"import "@babylonjs/core/Audio/audioSceneComponent";
+import { Sound as _Sound } from "@babylonjs/core/Audio/sound";
+import { register as _register } from "reactylon";
+_register({
+  "sound": [_Sound, 0]
+});
+<> <sound /> </>;"
+`;
+
+exports[`should add JSX-prop and JSX-element side effect 1`] = `
+"import "@babylonjs/core/Layers/effectLayerSceneComponent";
+import "@babylonjs/core/Rendering/boundingBoxRenderer";
+import "@babylonjs/core/Collisions/collisionCoordinator";
+import "@babylonjs/core/Audio/audioSceneComponent";
+import "@babylonjs/core/Physics/physicsEngineComponent";
+import "@babylonjs/core/Engines/AbstractEngine/abstractEngine.views";
+import { HighlightLayer as _HighlightLayer } from "@babylonjs/core/Layers/highlightLayer";
+import { CreateBox as _CreateBox } from "@babylonjs/core/Meshes/Builders/boxBuilder";
+import { Sound as _Sound } from "@babylonjs/core/Audio/sound";
+import { register as _register } from "reactylon";
+_register({
+  "sound": [_Sound, 0],
+  "box": [_CreateBox, 0],
+  "highlightLayer": [_HighlightLayer, 0]
+});
+<Engine isMultipleCanvas> <Scene physicsOptions={{}}> <sound /> <box checkCollisions showBoundingBox /> <highlightLayer /> </Scene> </Engine>;"
+`;
+
+exports[`should add both JSX-element and implicit prototype-based side effect 1`] = `
+"import "@babylonjs/core/Helpers/sceneHelpers";
+import "@babylonjs/core/Audio/audioSceneComponent";
+import { Sound as _Sound } from "@babylonjs/core/Audio/sound";
+import { register as _register } from "reactylon";
+_register({
+  "sound": [_Sound, 0]
+});
+const Component = () => {
+  const scene = useScene();
+  useEffect(() => {
+    scene.createDefaultCameraOrLight();
+  }, []);
+  return <> <sound /> </>;
+};"
+`;
+
+exports[`should add constructor-based side effect 1`] = `
+"import "@babylonjs/core/Lights/Shadows/shadowGeneratorSceneComponent";
+const Component = () => {
+  useEffect(() => {
+    const shadowGenerator = new ShadowGenerator();
+  }, []);
+  return null;
+};"
+`;
+
+exports[`should add implicit prototype-based side effect 1`] = `
+"import "@babylonjs/core/Helpers/sceneHelpers";
+const Component = () => {
+  const scene = useScene();
+  useEffect(() => {
+    scene.createDefaultCameraOrLight();
+  }, []);
+  return null;
+};"
+`;
+
+exports[`should add only one JSX-element side effect (no duplicates) 1`] = `
+"import "@babylonjs/core/Audio/audioSceneComponent";
+import { Sound as _Sound } from "@babylonjs/core/Audio/sound";
+import { register as _register } from "reactylon";
+_register({
+  "sound": [_Sound, 0]
+});
+<> <sound /> <sound /> </>;"
+`;
+
+exports[`should add only one implicit prototype-based side effect (no duplicates) 1`] = `
+"import "@babylonjs/core/Helpers/sceneHelpers";
+const Component = () => {
+  const scene = useScene();
+  useEffect(() => {
+    scene.createDefaultCameraOrLight();
+    scene.createDefaultCameraOrLight();
+  }, []);
+  return null;
+};"
+`;
+
 exports[`should ignore a React component 1`] = `"<MyComponent />;"`;
 
-exports[`should transform Reactylon components and ingore React component 1`] = `
+exports[`should transform Reactylon components and ignore React component 1`] = `
 "import { DirectionalLight as _DirectionalLight } from "@babylonjs/core/Lights/directionalLight";
 import { PointLight as _PointLight } from "@babylonjs/core/Lights/pointLight";
 import { CreateBox as _CreateBox } from "@babylonjs/core/Meshes/Builders/boxBuilder";

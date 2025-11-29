@@ -4,8 +4,28 @@ import { declare } from "@babel/helper-plugin-utils";
 import { BabylonPackages, builders, CollidingComponents, ReversedCollidingComponents } from 'reactylon';
 import ParserUtils from './ParserUtils.js';
 
+/**
+ * Internal test purpose only: reset to isolate each test
+*/
+export function __resetReactylonBabelPluginStateForTests() {
+    babylonImportsSpecifiers.clear();
+    fileSideEffects.clear();
+    lastImport = null;
+    shouldSkipFile = false;
+    initialized = false;
+}
+
+/**
+ * JSX tag name -> ImportSpecifier Babel
+ * Es: "box" -> import { _CreateBox } from "@babylonjs/core/Meshes/Builders/boxBuilder"
+ */
 const babylonImportsSpecifiers = new Map<string, t.ImportSpecifier>();
-const sideEffects: Array<t.ImportDeclaration> = [];
+
+/**
+ * Specific file side-effects for single file
+ */
+let fileSideEffects = new Set<string>();
+
 
 let lastImport: NodePath<t.ImportDeclaration> | null = null;
 let initialized = false;
@@ -15,14 +35,42 @@ let coreSideEffectsMap: Record<string, string> = {};
 let guiExportsMap: Record<string, string> = {};
 //let guiSideEffectsMap: Record<string, string> = {};
 
+/**
+ * Reactylon "root" components: they are used as structural/entry-point
+ * components and for side-effect detection, but they must NOT be imported
+ * from Babylon or registered in Reactylon's inventory.
+ */
+const ROOT_REACTYLON_COMPONENTS = new Set([
+    'Engine',
+    'NativeEngine',
+    'Scene',
+    'Microgestures'
+]);
+
+/**
+ * Manual mapping for constructor-based side effects.
+ *
+ * This map exists specifically for side effects that are triggered when a
+ * class is instantiated (e.g. `new ShadowGenerator(...)`). These cases do
+ * not appear in the prototype-based analysis performed by
+ * `ParserUtils.getExportsAndSideEffects`, which detects only side effects
+ * added through prototype mutations or `defineProperty`.
+ * 
+ * Reference: Babylon.js ES6 support FAQ (lists both prototype- and
+ * constructor-based side effects; only the constructor-based ones go in this map)
+ * https://doc.babylonjs.com/setup/frameworkPackages/es6Support/#faq
+ *
+ */
+const constructorCoreSideEffectsMap: Record<string, string[]> = {
+    ShadowGenerator: ['@babylonjs/core/Lights/Shadows/shadowGeneratorSceneComponent']
+};
+
+let shouldSkipFile = false;
+
 function capitalizeFirstLetter(str: string): string {
     return `${str.charAt(0).toUpperCase()}${str.slice(1)}`;
 }
 
-type PluginOptions = {
-    sideEffects?: Array<string>;
-    nodeModulesPath?: string;
-}
 
 export default declare((api) => {
     api.assertVersion(7)
@@ -32,7 +80,6 @@ export default declare((api) => {
         },
         pre() {
             if (!initialized) {
-                const options = this.opts as PluginOptions;
 
                 const coreExportsAndSideEffects = ParserUtils.generateExportsAndSideEffects('@babylonjs/core');
                 coreExportsMap = coreExportsAndSideEffects.exports;
@@ -42,23 +89,23 @@ export default declare((api) => {
                 guiExportsMap = guiExportsAndSideEffects.exports;
                 //guiSideEffectsMap = guiExportsAndSideEffects.sideEffects;
 
-                // Add explicit side effects (additional side effects declared by user)
-                options?.sideEffects?.forEach((sideEffect) => {
-                    sideEffects.push(t.importDeclaration([], t.stringLiteral(sideEffect)));
-                });
-
                 initialized = true;
             }
         },
         post() {
             babylonImportsSpecifiers.clear();
             lastImport = null;
+            fileSideEffects.clear();
+            shouldSkipFile = false;
         },
         visitor: {
             ImportDeclaration(importPath) {
-                lastImport = importPath
+                if (shouldSkipFile) return;
+                lastImport = importPath;
             },
             JSXOpeningElement(path) {
+                if (shouldSkipFile) return;
+
                 // Don't include non-React JSX
                 // https://github.com/facebook/jsx/issues/13
                 const { name, attributes } = path.node
@@ -99,7 +146,9 @@ export default declare((api) => {
                 // Don't include colliding React JSX components
                 if (type in ReversedCollidingComponents) return
 
-                if (!babylonImportsSpecifiers.has(type)) {
+                const shouldRegisterComponent = !ROOT_REACTYLON_COMPONENTS.has(type);
+
+                if (shouldRegisterComponent && !babylonImportsSpecifiers.has(type)) {
                     const normalizedType = type in CollidingComponents ? CollidingComponents[type] : type;
                     const isBuilder = builders.includes(normalizedType);
                     const className = isBuilder ? `Create${capitalizeFirstLetter(normalizedType)}` : capitalizeFirstLetter(normalizedType);
@@ -110,40 +159,102 @@ export default declare((api) => {
                 }
 
                 // Add implicit side effects (derived from static parse of JSX Reactylon code)
-                const isMultipleCanvas = type === 'Engine' && attributes.some(attr => t.isJSXAttribute(attr) && attr.name.name === "isMultipleCanvas");
+
+                // Don't restrict the check on Engine component (type === 'Engine' && ...) because the user can create an alias of Engine's Reactylon component
+                const isMultipleCanvas = attributes.some(attr => t.isJSXAttribute(attr) && attr.name.name === "isMultipleCanvas");
                 if (isMultipleCanvas) {
-                    sideEffects.push(t.importDeclaration([], t.stringLiteral('@babylonjs/core/Engines/AbstractEngine/abstractEngine.views.js')));
+                    fileSideEffects.add('@babylonjs/core/Engines/AbstractEngine/abstractEngine.views');
                 }
-                const isPhysicsEngine = type === 'Scene' && attributes.some(attr => t.isJSXAttribute(attr) && attr.name.name === "physicsOptions");
+
+                // Don't restrict the check on Scene component (type === 'Scene' && ...) because the user can create an alias of Scene's Reactylon component
+                const isPhysicsEngine = attributes.some(attr => t.isJSXAttribute(attr) && attr.name.name === "physicsOptions");
                 if (isPhysicsEngine) {
-                    sideEffects.push(t.importDeclaration([], t.stringLiteral('@babylonjs/core/Physics/physicsEngineComponent.js')));
+                    fileSideEffects.add('@babylonjs/core/Physics/physicsEngineComponent');
                 }
                 const isAudio = type === 'sound';
                 if (isAudio) {
                     // Audio v1
-                    sideEffects.push(t.importDeclaration([], t.stringLiteral('@babylonjs/core/Audio/audioSceneComponent.js')));
-                    // sideEffects.push(t.importDeclaration([], t.stringLiteral('@babylonjs/core/Audio/audioEngine.js')));
+                    fileSideEffects.add('@babylonjs/core/Audio/audioSceneComponent');
+                    // fileSideEffects.add('@babylonjs/core/Audio/audioEngine');
                 }
 
                 const isCheckCollisions = attributes.some(attr => t.isJSXAttribute(attr) && attr.name.name === "checkCollisions");
                 if (isCheckCollisions) {
-                    sideEffects.push(t.importDeclaration([], t.stringLiteral('@babylonjs/core/Collisions/collisionCoordinator.js')));
+                    fileSideEffects.add('@babylonjs/core/Collisions/collisionCoordinator');
                 }
+
                 const isHighlightLayer = type === 'highlightLayer';
                 if (isHighlightLayer) {
-                    sideEffects.push(t.importDeclaration([], t.stringLiteral('@babylonjs/core/Layers/effectLayerSceneComponent.js')));
+                    fileSideEffects.add('@babylonjs/core/Layers/effectLayerSceneComponent');
                 }
+
                 const isBoundingBox = attributes.some(attr => t.isJSXAttribute(attr) && attr.name.name === "showBoundingBox");
                 if (isBoundingBox) {
-                    sideEffects.push(t.importDeclaration([], t.stringLiteral('@babylonjs/core/Rendering/boundingBoxRenderer.js')));
+                    fileSideEffects.add('@babylonjs/core/Rendering/boundingBoxRenderer');
                 }
-                // add here other side effects (https://doc.babylonjs.com/setup/frameworkPackages/es6Support/#faq)
             },
 
             Program: {
 
+                enter(path) {
+                    const filename = this.file?.opts?.filename || '';
+                    if (filename.includes('node_modules')) {
+                        //console.log(this.file?.opts?.filename);
+                        shouldSkipFile = true;
+                        path.stop();
+                        return;
+                    }
+                    shouldSkipFile = false;
+                },
+
                 exit(path) {
-                    if (!babylonImportsSpecifiers.size) return
+                    if (shouldSkipFile) return;
+
+                    path.traverse({
+
+                        // Add implicit prototype-based side effects detected from call expressions, e.g. scene.createDefaultCameraOrLight()
+                        CallExpression(callPath) {
+                            const callee = callPath.node.callee;
+                            if (t.isMemberExpression(callee)) {
+                                const property = callee.property;
+                                if (t.isIdentifier(property)) {
+                                    const sideEffectPath = coreSideEffectsMap[property.name];
+                                    // exclude assets folder containing .wasm and relative .js files
+                                    if (typeof sideEffectPath === 'string' && !sideEffectPath.startsWith('@babylonjs/core/assets/')) {
+                                        fileSideEffects.add(sideEffectPath);
+                                        // callPath.stop();
+                                    }
+                                }
+                            }
+                        },
+
+                        // Add constructor-based side effects detected from "new" expressions, e.g. new ShadowGenerator(...)
+                        NewExpression(newPath) {
+                            const callee = newPath.node.callee;
+                            let name: string | undefined;
+                            if (t.isIdentifier(callee)) {
+                                // e.g.: new ShadowGenerator(...)
+                                name = callee.name;
+                            } else if (t.isMemberExpression(callee) && t.isIdentifier(callee.property)) {
+                                // new BABYLON.ShadowGenerator(...)
+                                name = callee.property.name;
+                            }
+                            if (!name) return;
+                            const sideEffectPaths = constructorCoreSideEffectsMap[name];
+                            if (!sideEffectPaths) return;
+
+                            for (const sideEffectPath of sideEffectPaths) {
+                                fileSideEffects.add(sideEffectPath);
+                            }
+                        }
+                    });
+
+                    const hasJSXReactylon = babylonImportsSpecifiers.size > 0;
+                    const hasFileSideEffects = fileSideEffects.size > 0;
+
+                    if (!hasJSXReactylon && !hasFileSideEffects) {
+                        return;
+                    }
 
                     const babylonImports: Array<[string, t.ImportDeclaration, number]> = [];
 
@@ -162,51 +273,44 @@ export default declare((api) => {
                         babylonImports.push([type, importDeclaration, packageName]);
                     })
 
-                    const registerSpecifier = t.importSpecifier(path.scope.generateUidIdentifier('register'), t.identifier('register'));
-                    const registerImportDeclaration = t.importDeclaration([registerSpecifier], t.stringLiteral('reactylon'));
+                    const nodes: t.Statement[] = [];
 
-                    const registerCall = t.expressionStatement(
-                        t.callExpression(registerSpecifier.local, [
-                            t.objectExpression(
-                                babylonImports.map(([type, importDeclaration, packageName]) => {
-                                    const importSpecifier = importDeclaration.specifiers[0];
-                                    return t.objectProperty(
-                                        t.stringLiteral(type),
-                                        t.arrayExpression([
-                                            importSpecifier.local,
-                                            t.numericLiteral(packageName)
-                                        ]),
-                                        false,
-                                        false
-                                    );
-                                })
-                            ),
-                        ]),
-                    );
+                    if (hasJSXReactylon) {
 
-                    const babylonImportDeclarations = babylonImports.map(([, importDeclaration]) => importDeclaration);
+                        const registerSpecifier = t.importSpecifier(path.scope.generateUidIdentifier('register'), t.identifier('register'));
+                        const registerImportDeclaration = t.importDeclaration([registerSpecifier], t.stringLiteral('reactylon'));
 
-                    // Add implicit prototype-level side effects (derived from static parse of JavaScript code, e.g. scene.createDefaultCameraOrLight)
-                    path.traverse({
-                        CallExpression(callPath) {
-                            const callee = callPath.node.callee;
+                        const registerCall = t.expressionStatement(
+                            t.callExpression(registerSpecifier.local, [
+                                t.objectExpression(
+                                    babylonImports.map(([type, importDeclaration, packageName]) => {
+                                        const importSpecifier = importDeclaration.specifiers[0];
+                                        return t.objectProperty(
+                                            t.stringLiteral(type),
+                                            t.arrayExpression([
+                                                importSpecifier.local,
+                                                t.numericLiteral(packageName)
+                                            ]),
+                                            false,
+                                            false
+                                        );
+                                    })
+                                ),
+                            ]),
+                        );
 
-                            if (t.isMemberExpression(callee)) {
-                                const property = callee.property;
-                                if (t.isIdentifier(property)) {
-                                    const sideEffectPath = coreSideEffectsMap[property.name];
-                                    // exclude assets folder containing .wasm and relative .js files
-                                    if (sideEffectPath && !sideEffectPath.startsWith('@babylonjs/core/assets/')) {
-                                        sideEffects.push(t.importDeclaration([], t.stringLiteral(sideEffectPath)));
-                                        // callPath.stop();
-                                    }
-                                }
-                            }
-                        }
-                    });
+                        const babylonImportDeclarations = babylonImports.map(([, importDeclaration]) => importDeclaration);
+                        nodes.push(registerCall, registerImportDeclaration, ...babylonImportDeclarations);
+
+                    }
+
+                    // Add all file side effects (explicit, implicit prototype-based)
+                    for (const pathStr of fileSideEffects) {
+                        nodes.push(t.importDeclaration([], t.stringLiteral(pathStr)));
+                    }
 
                     // Add imports and call register
-                    for (const node of [registerCall, registerImportDeclaration, ...babylonImportDeclarations, ...sideEffects]) {
+                    for (const node of nodes) {
                         if (lastImport) {
                             lastImport.insertAfter(node);
                         } else {
@@ -214,7 +318,6 @@ export default declare((api) => {
                         }
                     }
                 },
-
             },
         },
     }

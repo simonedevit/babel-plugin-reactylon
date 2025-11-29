@@ -1,9 +1,13 @@
 import { transform } from '@babel/core';
-import ReactylonBabelPlugin from './index.ts';
+import ReactylonBabelPlugin, { __resetReactylonBabelPluginStateForTests } from './index.ts';
 
 function execute(code: string): string {
     return transform(code.replace(/\s+/g, ' '), { plugins: [ReactylonBabelPlugin] })!.code!
 }
+
+beforeEach(() => {
+    __resetReactylonBabelPluginStateForTests();
+});
 
 test('should transform a Reactylon component', () => {
     const input = `
@@ -74,7 +78,7 @@ test('should ignore a React component', () => {
     expect(code).toMatchSnapshot();
 });
 
-test('should transform Reactylon components and ingore React component', () => {
+test('should transform Reactylon components and ignore React component', () => {
     const input = `
          <>
             <standardMaterial name='material'>
@@ -95,6 +99,116 @@ test('should transform Reactylon components and ingore React component', () => {
                 specular={Color3.Green()}
             />
         </>;
+    `;
+    const code = execute(input)
+    expect(code).toMatchSnapshot();
+});
+
+
+test('should add JSX-element side effect', () => {
+    const input = `
+        <>
+            <sound />
+        </>;
+    `;
+    const code = execute(input)
+    expect(code).toMatchSnapshot();
+});
+
+test('should add only one JSX-element side effect (no duplicates)', () => {
+    const input = `
+        <>
+            <sound />
+            <sound />
+        </>;
+    `;
+    const code = execute(input)
+    expect(code).toMatchSnapshot();
+});
+
+test('should add implicit prototype-based side effect', () => {
+    const input = `
+        const Component = () => {
+
+            const scene = useScene();
+
+            useEffect(() => {
+                scene.createDefaultCameraOrLight(); 
+            }, []);
+
+            return null;
+        }
+        
+    `;
+    const code = execute(input)
+    expect(code).toMatchSnapshot();
+});
+
+test('should add only one implicit prototype-based side effect (no duplicates)', () => {
+    const input = `
+        const Component = () => {
+
+            const scene = useScene();
+
+            useEffect(() => {
+                scene.createDefaultCameraOrLight(); 
+                scene.createDefaultCameraOrLight(); 
+            }, []);
+
+            return null;
+        }
+        
+    `;
+    const code = execute(input)
+    expect(code).toMatchSnapshot();
+});
+
+test('should add both JSX-element and implicit prototype-based side effect', () => {
+    const input = `
+        const Component = () => {
+
+            const scene = useScene();
+
+            useEffect(() => {
+                scene.createDefaultCameraOrLight(); 
+            }, []);
+
+            return (
+                <>
+                    <sound />
+                </>
+            );
+        }
+        
+    `;
+    const code = execute(input)
+    expect(code).toMatchSnapshot();
+});
+
+
+test('should add constructor-based side effect', () => {
+    const input = `
+        const Component = () => {
+            useEffect(() => {
+                const shadowGenerator = new ShadowGenerator();
+            }, []);
+            return null;
+        }
+        
+    `;
+    const code = execute(input)
+    expect(code).toMatchSnapshot();
+});
+
+test('should add JSX-prop and JSX-element side effect', () => {
+    const input = `
+        <Engine isMultipleCanvas>
+            <Scene physicsOptions={{}}>
+                <sound />
+                <box checkCollisions showBoundingBox />
+                <highlightLayer />
+            </Scene>
+        </Engine>        
     `;
     const code = execute(input)
     expect(code).toMatchSnapshot();

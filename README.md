@@ -3,11 +3,24 @@
 A Babel plugin designed to enable **tree shaking** in a Reactylon application. It statically analyzes Reactylon JSX elements and automatically manages imports and registrations of the relative Babylon.js classes, ensuring only the necessary parts of the Babylon.js library are included in the final bundle.
 
 ## Features
-- Automatic detection of Babylon.js components used in JSX
-- Automatic import of Babylon.js classes from `@babylonjs/core` e `@babylonjs/gui`
-- Implicit side effects management (detect prototype-level side effects in Babylon.js and ensures proper runtime behaviour)
-- Explicit side effects support (allows users to define custom side effects manually)
-- Automatic registration (ensures that used Babylon.js classes are registered within Reactylon's internal registry)
+- **Automatic JSX component resolution & import generation**
+  
+    Automatically detects the Babylon.js components used in JSX (e.g. `<box />`, `<arcRotateCamera />`, `<directionalLight />`) and generates the correct tree-shakable ES6 imports from `@babylonjs/core` and `@babylonjs/gui`.
+
+- **Automatic Babylon.js side-effect handling**
+  
+    Identifies all Babylon.js features that require side-effect imports and injects them automatically, including:
+
+  - **JSX-prop–based side effects**
+  
+    Triggered by props like `checkCollisions`, `physicsOptions`, `showBoundingBox`, or by specific JSX elements such as `<audio>` or `<highlightLayer>`.
+  
+  - **Prototype-based side effects** 
+    
+    Derived from method calls such as `scene.createDefaultCameraOrLight()` that rely on prototype extensions.
+  
+  - **Constructor-based side effects** like `new ShadowGenerator(...)` that require additional runtime modules.
+
 
 ## Configuration
 
@@ -80,18 +93,6 @@ export default defineConfig({
     }),
   ],
 })
-```
-
-### Additional configurations
-Additionally you can manually define extra side effects (see [Babylon.js ES6 support FAQ](https://doc.babylonjs.com/setup/frameworkPackages/es6Support/#faq)).
-
-```js
-['babel-plugin-reactylon', {
-  // additional side effects (optional)
-  sideEffects: [
-    '@babylonjs/core/Engines/Extensions/engine.query.js'
-  ]
-}]
 ```
 
 ## How it works
