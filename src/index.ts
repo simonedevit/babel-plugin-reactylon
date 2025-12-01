@@ -196,12 +196,11 @@ export default declare((api) => {
 
             Program: {
 
-                enter(path) {
+                enter() {
                     const filename = this.file?.opts?.filename || '';
                     if (filename.includes('node_modules')) {
                         //console.log(this.file?.opts?.filename);
                         shouldSkipFile = true;
-                        path.stop();
                         return;
                     }
                     shouldSkipFile = false;
@@ -222,7 +221,6 @@ export default declare((api) => {
                                     // exclude assets folder containing .wasm and relative .js files
                                     if (typeof sideEffectPath === 'string' && !sideEffectPath.startsWith('@babylonjs/core/assets/')) {
                                         fileSideEffects.add(sideEffectPath);
-                                        // callPath.stop();
                                     }
                                 }
                             }
