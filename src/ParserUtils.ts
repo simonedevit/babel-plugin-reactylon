@@ -99,11 +99,18 @@ class ParserUtils {
                 const rel = path.relative(pkgRoot, fullPath).replace(/\.(js|mjs|ts)$/, '');
                 const importPath = path.posix.join(pkgName, rel.split(path.sep).join('/'));
                 const { exports, sideEffects } = this.getExportsAndSideEffects(fullPath);
+                // After PR #18441 (https://github.com/BabylonJS/Babylon.js/pull/18441), exports and
+                // side effects live in .pure files. For both, we map to the wrapper (same name without
+                // .pure): the wrapper does `export * from ".pure"` so the export is still accessible,
+                // and it calls Register*() so side effects are properly executed. Before the PR no
+                // .pure files existed, so this branch is never taken and behaviour is unchanged.
+                const resolvedPath = importPath.endsWith('.pure') ? importPath.slice(0, -5) : importPath;
                 exports.forEach(exp => {
-                    exportsMap[exp] = importPath;
+                    exportsMap[exp] = resolvedPath;
                 });
+                const sideEffectPath = resolvedPath;
                 sideEffects.forEach(sideEffect => {
-                    sideEffectsMap[sideEffect] = importPath;
+                    sideEffectsMap[sideEffect] = sideEffectPath;
                 })
             }
         });
