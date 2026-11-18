@@ -1,7 +1,9 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`should add JSX-element side effect 1`] = `
-"import "@babylonjs/core/Audio/audioSceneComponent";
+"import "@babylonjs/core/Culling/ray";
+import "@babylonjs/core/Materials/standardMaterial";
+import "@babylonjs/core/Audio/audioSceneComponent";
 import { Sound as _Sound } from "@babylonjs/core/Audio/sound";
 import { register as _register } from "reactylon";
 _register({
@@ -11,7 +13,9 @@ _register({
 `;
 
 exports[`should add JSX-prop and JSX-element side effect 1`] = `
-"import "@babylonjs/core/Layers/effectLayerSceneComponent";
+"import "@babylonjs/core/Culling/ray";
+import "@babylonjs/core/Materials/standardMaterial";
+import "@babylonjs/core/Layers/effectLayerSceneComponent";
 import "@babylonjs/core/Rendering/boundingBoxRenderer";
 import "@babylonjs/core/Collisions/collisionCoordinator";
 import "@babylonjs/core/Audio/audioSceneComponent";
@@ -30,7 +34,9 @@ _register({
 `;
 
 exports[`should add both JSX-element and implicit prototype-based side effect 1`] = `
-"import "@babylonjs/core/Helpers/sceneHelpers";
+"import "@babylonjs/core/Culling/ray";
+import "@babylonjs/core/Materials/standardMaterial";
+import "@babylonjs/core/Helpers/sceneHelpers";
 import "@babylonjs/core/Audio/audioSceneComponent";
 import { Sound as _Sound } from "@babylonjs/core/Audio/sound";
 import { register as _register } from "reactylon";
@@ -68,7 +74,9 @@ const Component = () => {
 `;
 
 exports[`should add only one JSX-element side effect (no duplicates) 1`] = `
-"import "@babylonjs/core/Audio/audioSceneComponent";
+"import "@babylonjs/core/Culling/ray";
+import "@babylonjs/core/Materials/standardMaterial";
+import "@babylonjs/core/Audio/audioSceneComponent";
 import { Sound as _Sound } from "@babylonjs/core/Audio/sound";
 import { register as _register } from "reactylon";
 _register({
@@ -92,7 +100,9 @@ const Component = () => {
 exports[`should ignore a React component 1`] = `"<MyComponent />;"`;
 
 exports[`should transform Reactylon components and ignore React component 1`] = `
-"import { DirectionalLight as _DirectionalLight } from "@babylonjs/core/Lights/directionalLight";
+"import "@babylonjs/core/Culling/ray";
+import "@babylonjs/core/Materials/standardMaterial";
+import { DirectionalLight as _DirectionalLight } from "@babylonjs/core/Lights/directionalLight";
 import { PointLight as _PointLight } from "@babylonjs/core/Lights/pointLight";
 import { CreateBox as _CreateBox } from "@babylonjs/core/Meshes/Builders/boxBuilder";
 import { Texture as _Texture } from "@babylonjs/core/Materials/Textures/texture";
@@ -109,7 +119,9 @@ _register({
 `;
 
 exports[`should transform a Reactylon component 1`] = `
-"import { HemisphericLight as _HemisphericLight } from "@babylonjs/core/Lights/hemisphericLight";
+"import "@babylonjs/core/Culling/ray";
+import "@babylonjs/core/Materials/standardMaterial";
+import { HemisphericLight as _HemisphericLight } from "@babylonjs/core/Lights/hemisphericLight";
 import { register as _register } from "reactylon";
 _register({
   "hemisphericLight": [_HemisphericLight, 0]
@@ -118,7 +130,9 @@ _register({
 `;
 
 exports[`should transform a Reactylon component stored in a variable 1`] = `
-"import { Mesh as _Mesh } from "@babylonjs/core/Meshes/mesh";
+"import "@babylonjs/core/Culling/ray";
+import "@babylonjs/core/Materials/standardMaterial";
+import { Mesh as _Mesh } from "@babylonjs/core/Meshes/mesh";
 import { register as _register } from "reactylon";
 _register({
   "mesh": [_Mesh, 0]
@@ -128,7 +142,9 @@ const Comp = 'mesh';
 `;
 
 exports[`should transform both Reactylon components 1`] = `
-"import { DirectionalLight as _DirectionalLight } from "@babylonjs/core/Lights/directionalLight";
+"import "@babylonjs/core/Culling/ray";
+import "@babylonjs/core/Materials/standardMaterial";
+import { DirectionalLight as _DirectionalLight } from "@babylonjs/core/Lights/directionalLight";
 import { PointLight as _PointLight } from "@babylonjs/core/Lights/pointLight";
 import { register as _register } from "reactylon";
 _register({
@@ -139,7 +155,9 @@ isCondition ? <pointLight /> : <directionalLight />;"
 `;
 
 exports[`should transform multiple Reactylon components 1`] = `
-"import { DirectionalLight as _DirectionalLight } from "@babylonjs/core/Lights/directionalLight";
+"import "@babylonjs/core/Culling/ray";
+import "@babylonjs/core/Materials/standardMaterial";
+import { DirectionalLight as _DirectionalLight } from "@babylonjs/core/Lights/directionalLight";
 import { PointLight as _PointLight } from "@babylonjs/core/Lights/pointLight";
 import { CreateText as _CreateText } from "@babylonjs/core/Meshes/Builders/textBuilder";
 import { CreatePlane as _CreatePlane } from "@babylonjs/core/Meshes/Builders/planeBuilder";

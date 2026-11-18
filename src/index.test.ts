@@ -213,3 +213,72 @@ test('should add JSX-prop and JSX-element side effect', () => {
     const code = execute(input)
     expect(code).toMatchSnapshot();
 });
+
+// Side effects every Reactylon scene relies on (see REACTYLON_SCENE_SIDE_EFFECTS in index.ts)
+const STANDARD_MATERIAL_SIDE_EFFECT = 'import "@babylonjs/core/Materials/standardMaterial";';
+const RAY_SIDE_EFFECT = 'import "@babylonjs/core/Culling/ray";';
+
+test('should add scene side effects to a file with Reactylon JSX', () => {
+    const input = `
+        <box name='box' />;
+    `;
+    const code = execute(input)
+    expect(code).toContain(STANDARD_MATERIAL_SIDE_EFFECT);
+    expect(code).toContain(RAY_SIDE_EFFECT);
+});
+
+test('should add scene side effects to a file importing Reactylon that creates meshes imperatively', () => {
+    const input = `
+        import { Engine } from 'reactylon/web';
+        import { Scene } from 'reactylon';
+        import { CreateBox } from '@babylonjs/core/Meshes/Builders/boxBuilder';
+        <Engine>
+            <Scene onSceneReady={(scene) => CreateBox('box', {}, scene)} />
+        </Engine>;
+    `;
+    const code = execute(input)
+    expect(code).toContain(STANDARD_MATERIAL_SIDE_EFFECT);
+    expect(code).toContain(RAY_SIDE_EFFECT);
+});
+
+test('should add scene side effects when Reactylon components are aliased', () => {
+    const input = `
+        import { Engine as BabylonEngine } from 'reactylon/web';
+        <BabylonEngine />;
+    `;
+    const code = execute(input)
+    expect(code).toContain(STANDARD_MATERIAL_SIDE_EFFECT);
+    expect(code).toContain(RAY_SIDE_EFFECT);
+});
+
+test('should add scene side effects only once', () => {
+    const input = `
+        <>
+            <box />
+            <sphere />
+        </>;
+    `;
+    const code = execute(input)
+    expect(code.split(STANDARD_MATERIAL_SIDE_EFFECT)).toHaveLength(2);
+    expect(code.split(RAY_SIDE_EFFECT)).toHaveLength(2);
+});
+
+test('should not add scene side effects to a plain React file', () => {
+    const input = `
+        import { useState } from 'react';
+        <MyComponent />;
+    `;
+    const code = execute(input)
+    expect(code).not.toContain(STANDARD_MATERIAL_SIDE_EFFECT);
+    expect(code).not.toContain(RAY_SIDE_EFFECT);
+});
+
+test('should not add scene side effects for type-only Reactylon imports', () => {
+    const input = `
+        import type { SceneProps } from 'reactylon';
+        export const props: SceneProps = {};
+    `;
+    const code = transform(input, { plugins: [ReactylonBabelPlugin], parserOpts: { plugins: ['typescript'] } })!.code!
+    expect(code).not.toContain(STANDARD_MATERIAL_SIDE_EFFECT);
+    expect(code).not.toContain(RAY_SIDE_EFFECT);
+});

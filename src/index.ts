@@ -65,10 +65,33 @@ const constructorCoreSideEffectsMap: Record<string, string[]> = {
     ShadowGenerator: ['@babylonjs/core/Lights/Shadows/shadowGeneratorSceneComponent']
 };
 
+/**
+ * Side effects needed implicitly by Babylon itself, so they never appear in user code.
+ * - standardMaterial: default material for meshes without one (otherwise they are not rendered)
+ *   and GetClass("BABYLON.StandardMaterial") in AdvancedDynamicTexture.CreateForMesh.
+ * - ray: scene picking used by pointer events (otherwise scene.pick() returns an empty result).
+ */
+const REACTYLON_SCENE_SIDE_EFFECTS = [
+    '@babylonjs/core/Materials/standardMaterial',
+    '@babylonjs/core/Culling/ray'
+];
+
 let shouldSkipFile = false;
 
 function capitalizeFirstLetter(str: string): string {
     return `${str.charAt(0).toUpperCase()}${str.slice(1)}`;
+}
+
+/**
+ * True when the file imports something from Reactylon at runtime (e.g. <Engine>, <Scene>, hooks),
+ * so it can build a scene even if all its meshes are created imperatively.
+ */
+function importsReactylon(program: NodePath<t.Program>): boolean {
+    return program.node.body.some(node =>
+        t.isImportDeclaration(node) &&
+        node.importKind !== 'type' &&
+        (node.source.value === 'reactylon' || node.source.value.startsWith('reactylon/'))
+    );
 }
 
 
@@ -248,6 +271,15 @@ export default declare((api) => {
                     });
 
                     const hasJSXReactylon = babylonImportsSpecifiers.size > 0;
+
+                    // Every file that renders Reactylon content gets the side effects any scene relies on,
+                    // so each file keeps working on its own (code splitting, reuse in other apps)
+                    if (hasJSXReactylon || importsReactylon(path)) {
+                        for (const sideEffectPath of REACTYLON_SCENE_SIDE_EFFECTS) {
+                            fileSideEffects.add(sideEffectPath);
+                        }
+                    }
+
                     const hasFileSideEffects = fileSideEffects.size > 0;
 
                     if (!hasJSXReactylon && !hasFileSideEffects) {
