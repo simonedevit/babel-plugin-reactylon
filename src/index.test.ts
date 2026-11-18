@@ -282,3 +282,24 @@ test('should not add scene side effects for type-only Reactylon imports', () => 
     expect(code).not.toContain(STANDARD_MATERIAL_SIDE_EFFECT);
     expect(code).not.toContain(RAY_SIDE_EFFECT);
 });
+
+const INSTANCED_MESH_SIDE_EFFECT = 'import "@babylonjs/core/Meshes/instancedMesh";';
+
+test('should add InstancedMesh side effect for the instanceFrom prop', () => {
+    const input = `
+        <>
+            <box name='box' />
+            <box name='instanced-box' instanceFrom='box' />
+        </>;
+    `;
+    const code = execute(input)
+    expect(code).toContain(INSTANCED_MESH_SIDE_EFFECT);
+});
+
+test('should add InstancedMesh side effect for createInstance calls', () => {
+    const input = `
+        const instance = mesh.createInstance('instance');
+    `;
+    const code = execute(input)
+    expect(code).toContain(INSTANCED_MESH_SIDE_EFFECT);
+});

@@ -71,6 +71,11 @@ const constructorCoreSideEffectsMap: Record<string, string[]> = {
  *   and GetClass("BABYLON.StandardMaterial") in AdvancedDynamicTexture.CreateForMesh.
  * - ray: scene picking used by pointer events (otherwise scene.pick() returns an empty result).
  */
+/**
+ * Registers Mesh._instancedMeshFactory, used by Mesh.createInstance (and by the instanceFrom prop).
+ */
+const INSTANCED_MESH_SIDE_EFFECT = '@babylonjs/core/Meshes/instancedMesh';
+
 const REACTYLON_SCENE_SIDE_EFFECTS = [
     '@babylonjs/core/Materials/standardMaterial',
     '@babylonjs/core/Culling/ray'
@@ -215,6 +220,11 @@ export default declare((api) => {
                 if (isBoundingBox) {
                     fileSideEffects.add('@babylonjs/core/Rendering/boundingBoxRenderer');
                 }
+
+                const isInstance = attributes.some(attr => t.isJSXAttribute(attr) && attr.name.name === "instanceFrom");
+                if (isInstance) {
+                    fileSideEffects.add(INSTANCED_MESH_SIDE_EFFECT);
+                }
             },
 
             Program: {
@@ -240,6 +250,10 @@ export default declare((api) => {
                             if (t.isMemberExpression(callee)) {
                                 const property = callee.property;
                                 if (t.isIdentifier(property)) {
+                                    // e.g. mesh.createInstance(...)
+                                    if (property.name === 'createInstance') {
+                                        fileSideEffects.add(INSTANCED_MESH_SIDE_EFFECT);
+                                    }
                                     const sideEffectPath = coreSideEffectsMap[property.name];
                                     // exclude assets folder containing .wasm and relative .js files
                                     if (typeof sideEffectPath === 'string' && !sideEffectPath.startsWith('@babylonjs/core/assets/')) {
