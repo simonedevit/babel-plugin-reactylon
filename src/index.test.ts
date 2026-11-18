@@ -303,3 +303,12 @@ test('should add InstancedMesh side effect for createInstance calls', () => {
     const code = execute(input)
     expect(code).toContain(INSTANCED_MESH_SIDE_EFFECT);
 });
+
+test('should add physics side effect for physicsOptions passed as an object property', () => {
+    const input = `
+        React.cloneElement(child, { physicsOptions: { plugin } });
+    `;
+    const code = execute(input)
+    expect(code).toContain('import "@babylonjs/core/Physics/joinedPhysicsEngineComponent";');
+    expect(code).toContain('import "@babylonjs/core/Physics/v2/physicsEngineComponent";');
+});

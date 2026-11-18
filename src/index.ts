@@ -66,16 +66,28 @@ const constructorCoreSideEffectsMap: Record<string, string[]> = {
 };
 
 /**
+ * Registers Mesh._instancedMeshFactory, used by Mesh.createInstance (and by the instanceFrom prop).
+ */
+const INSTANCED_MESH_SIDE_EFFECT = '@babylonjs/core/Meshes/instancedMesh';
+
+/**
+ * Physics side effects for physicsOptions (Physics V2 only):
+ * - joinedPhysicsEngineComponent: Scene.enablePhysics/getPhysicsEngine (picks V1 or V2 from the plugin);
+ * - v2/physicsEngineComponent: TransformNode physics methods (applyImpulse, getPhysicsBody, ...).
+ * The legacy "Physics/physicsEngineComponent" also pulls the V1 component, whose
+ * AbstractMesh.applyImpulse shadows the V2 one.
+ */
+const PHYSICS_SIDE_EFFECTS = [
+    '@babylonjs/core/Physics/joinedPhysicsEngineComponent',
+    '@babylonjs/core/Physics/v2/physicsEngineComponent'
+];
+
+/**
  * Side effects needed implicitly by Babylon itself, so they never appear in user code.
  * - standardMaterial: default material for meshes without one (otherwise they are not rendered)
  *   and GetClass("BABYLON.StandardMaterial") in AdvancedDynamicTexture.CreateForMesh.
  * - ray: scene picking used by pointer events (otherwise scene.pick() returns an empty result).
  */
-/**
- * Registers Mesh._instancedMeshFactory, used by Mesh.createInstance (and by the instanceFrom prop).
- */
-const INSTANCED_MESH_SIDE_EFFECT = '@babylonjs/core/Meshes/instancedMesh';
-
 const REACTYLON_SCENE_SIDE_EFFECTS = [
     '@babylonjs/core/Materials/standardMaterial',
     '@babylonjs/core/Culling/ray'
@@ -197,7 +209,7 @@ export default declare((api) => {
                 // Don't restrict the check on Scene component (type === 'Scene' && ...) because the user can create an alias of Scene's Reactylon component
                 const isPhysicsEngine = attributes.some(attr => t.isJSXAttribute(attr) && attr.name.name === "physicsOptions");
                 if (isPhysicsEngine) {
-                    fileSideEffects.add('@babylonjs/core/Physics/physicsEngineComponent');
+                    PHYSICS_SIDE_EFFECTS.forEach(sideEffect => fileSideEffects.add(sideEffect));
                 }
                 const isAudio = type === 'sound';
                 if (isAudio) {
@@ -280,6 +292,15 @@ export default declare((api) => {
 
                             for (const sideEffectPath of sideEffectPaths) {
                                 fileSideEffects.add(sideEffectPath);
+                            }
+                        },
+
+                        // Scene props passed as an object (e.g. React.cloneElement(scene, { physicsOptions }))
+                        ObjectProperty(propertyPath) {
+                            const key = propertyPath.node.key;
+                            const keyName = t.isIdentifier(key) ? key.name : t.isStringLiteral(key) ? key.value : undefined;
+                            if (keyName === 'physicsOptions') {
+                                PHYSICS_SIDE_EFFECTS.forEach(sideEffect => fileSideEffects.add(sideEffect));
                             }
                         }
                     });
